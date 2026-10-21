@@ -1,0 +1,524 @@
+{
+  "name": "FinEdge LinkedIn Content Automation (AutoGen + n8n)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 2,4"
+            }
+          ]
+        }
+      },
+      "id": "dddc6dc1-0ee8-4d68-826e-6a0f9564c982",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0769da68-8a8a-4f97-82be-6fad8aaeadfc",
+              "name": "service_url",
+              "type": "string",
+              "value": "http://127.0.0.1:8000"
+            },
+            {
+              "id": "0a818515-4673-4227-a1d9-5d6d1d0875b8",
+              "name": "brand_name",
+              "type": "string",
+              "value": "FinEdge"
+            },
+            {
+              "id": "dfb19fc1-b764-4ebf-982f-75780750c2e7",
+              "name": "brand_voice",
+              "type": "string",
+              "value": "Authoritative, clear, optimistic, never hype-driven"
+            },
+            {
+              "id": "564d8d78-5b56-4dd0-ab7d-28460dbbd997",
+              "name": "audience",
+              "type": "string",
+              "value": "Indian retail investors, SME founders, fintech professionals"
+            },
+            {
+              "id": "f888aff1-6637-4f31-bd81-cdb2f35719b6",
+              "name": "pillars",
+              "type": "array",
+              "value": "={{ ['Financial literacy', 'Digital payments', 'Responsible investing'] }}"
+            },
+            {
+              "id": "97f67b47-479e-49b6-a371-a07ac52df25f",
+              "name": "banned_terms",
+              "type": "array",
+              "value": "={{ ['guaranteed returns', 'risk-free', 'double your money'] }}"
+            },
+            {
+              "id": "4706d5ae-966d-4005-b981-362657284789",
+              "name": "call_to_action",
+              "type": "string",
+              "value": "Follow FinEdge for practical money insights."
+            },
+            {
+              "id": "93bbb9ec-7d73-4983-a60d-3fcd89a19ea1",
+              "name": "topic",
+              "type": "string",
+              "value": "={{ ['How UPI is changing small-business cash flow', 'Building an emergency fund in an inflationary year', 'What SMEs should know about digital lending'][$now.weekNumber % 3] }}"
+            },
+            {
+              "id": "7e583c1f-dde7-4914-b84a-bc9ad95efa6b",
+              "name": "confidence_threshold",
+              "type": "number",
+              "value": "0.75"
+            },
+            {
+              "id": "5ce5d241-5204-4410-98ca-a75ba89beea5",
+              "name": "dry_run",
+              "type": "boolean",
+              "value": "true"
+            },
+            {
+              "id": "cc99f2b2-687e-4e2a-ac1a-7fb8a29f3919",
+              "name": "slack_webhook_url",
+              "type": "string",
+              "value": "https://hooks.slack.com/services/REPLACE/WITH/YOURS"
+            },
+            {
+              "id": "c72d556f-d126-468e-b679-9ac147712df7",
+              "name": "linkedin_org_urn",
+              "type": "string",
+              "value": "REPLACE_WITH_ORG_ID"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "529dd9a6-f24d-4254-9a9f-6fa279f70d32",
+      "name": "Brand Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.service_url }}/linkedin",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ brand: { name: $json.brand_name, voice: $json.brand_voice, audience: $json.audience, pillars: $json.pillars, banned_terms: $json.banned_terms, call_to_action: $json.call_to_action }, context: { topic: $json.topic }, num_ideas: 3, max_hashtags: 5 }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "15425df1-db0c-48af-a7e5-8332a46d5733",
+      "name": "AutoGen Microservice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b4cf2bca-8391-4c5e-8935-d53a92b90465",
+              "name": "run_id",
+              "type": "string",
+              "value": "={{ $json.run_id }}"
+            },
+            {
+              "id": "8d8b210c-5555-40cf-bc2d-6524a707a235",
+              "name": "mode",
+              "type": "string",
+              "value": "={{ $json.mode }}"
+            },
+            {
+              "id": "1ff481c4-c4e5-4f1a-a914-c819a0839bcd",
+              "name": "topic",
+              "type": "string",
+              "value": "={{ $('Brand Config').item.json.topic }}"
+            },
+            {
+              "id": "0c0f80d8-0d27-4033-a03e-767ef6ab9a70",
+              "name": "draft",
+              "type": "string",
+              "value": "={{ $json.draft }}"
+            },
+            {
+              "id": "1670c615-872e-410b-a7e4-e7c12a85a52f",
+              "name": "hashtags",
+              "type": "array",
+              "value": "={{ $json.hashtags }}"
+            },
+            {
+              "id": "031c8e26-6bbc-4470-a6da-fb9ce7e56a3e",
+              "name": "final_text",
+              "type": "string",
+              "value": "={{ $json.draft }}\n\n{{ $json.hashtags.join(' ') }}"
+            },
+            {
+              "id": "91487c6d-50b6-45f9-80a5-6626bb2f8a9e",
+              "name": "confidence",
+              "type": "number",
+              "value": "={{ $json.confidence }}"
+            },
+            {
+              "id": "ac5fe462-b388-43d9-902f-d7c77f0ca2d8",
+              "name": "threshold",
+              "type": "number",
+              "value": "={{ $('Brand Config').item.json.confidence_threshold }}"
+            },
+            {
+              "id": "b9656cf4-e184-497f-a441-5ba647c2b3b5",
+              "name": "dry_run",
+              "type": "boolean",
+              "value": "={{ $('Brand Config').item.json.dry_run }}"
+            },
+            {
+              "id": "d5154977-3369-4d2c-8649-99812579c2d0",
+              "name": "flags",
+              "type": "string",
+              "value": "={{ ($json.confidence_breakdown.flags || []).join(', ') || 'none' }}"
+            },
+            {
+              "id": "84f5939b-ae06-42ec-a37e-b7ab04cf3a2e",
+              "name": "review_reason",
+              "type": "string",
+              "value": "={{ $('Brand Config').item.json.dry_run ? 'dry-run mode' : ($json.confidence < $('Brand Config').item.json.confidence_threshold ? 'confidence below threshold' : 'auto-approved') }}"
+            },
+            {
+              "id": "3ef83b23-1596-4b3a-91c0-5922f2ba5d91",
+              "name": "service_url",
+              "type": "string",
+              "value": "={{ $('Brand Config').item.json.service_url }}"
+            },
+            {
+              "id": "f2955e79-effc-457b-b06b-1ea99517ac9b",
+              "name": "slack_webhook_url",
+              "type": "string",
+              "value": "={{ $('Brand Config').item.json.slack_webhook_url }}"
+            },
+            {
+              "id": "e9c3b05b-6a45-46e9-b722-a9077ef4990f",
+              "name": "linkedin_org_urn",
+              "type": "string",
+              "value": "={{ $('Brand Config').item.json.linkedin_org_urn }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "750f5c59-b794-4661-a5b5-148aad559ee4",
+      "name": "Compose Final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        680,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "51cbc47d-5b10-4998-9e50-49fc250450a7",
+              "leftValue": "={{ $json.dry_run }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "f980d10f-4cfd-40d2-b451-5271d034ae3f",
+              "leftValue": "={{ $json.confidence }}",
+              "rightValue": "={{ $json.threshold }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8b6d5f61-1d21-41bc-8321-78696ffe623f",
+      "name": "Approval Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "postAs": "organization",
+        "organization": "={{ $json.linkedin_org_urn }}",
+        "text": "={{ $json.final_text }}",
+        "shareMediaCategory": "NONE",
+        "additionalFields": {}
+      },
+      "id": "349b2239-c135-46a2-89b8-d85c272e5735",
+      "name": "Publish to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.slack_webhook_url }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: '*FinEdge LinkedIn draft for review*\\nReason: ' + $json.review_reason + ' | Confidence: ' + $json.confidence + ' (threshold ' + $json.threshold + ') | Flags: ' + $json.flags + '\\nRun: ' + $json.run_id + ' (' + $json.mode + ')\\n\\n' + $json.final_text }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "7e9393a2-c27b-4157-9f4f-9c50f257dc98",
+      "name": "Slack Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        320
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Compose Final').item.json.service_url }}/log",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ run_id: $('Compose Final').item.json.run_id, route: 'linkedin_published', status: 'posted', confidence: $('Compose Final').item.json.confidence, threshold: $('Compose Final').item.json.threshold, dry_run: $('Compose Final').item.json.dry_run, mode: $('Compose Final').item.json.mode, topic: $('Compose Final').item.json.topic, hashtags: $('Compose Final').item.json.hashtags, draft: $('Compose Final').item.json.draft, error: $json.error ? JSON.stringify($json.error).slice(0, 300) : '' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "0aa238ae-3a1a-4e0f-ba7a-262bd70580ea",
+      "name": "Log Published",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        80
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Compose Final').item.json.service_url }}/log",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ run_id: $('Compose Final').item.json.run_id, route: 'slack_review', status: $json.error ? 'slack_failed' : 'sent_to_slack', confidence: $('Compose Final').item.json.confidence, threshold: $('Compose Final').item.json.threshold, dry_run: $('Compose Final').item.json.dry_run, mode: $('Compose Final').item.json.mode, topic: $('Compose Final').item.json.topic, hashtags: $('Compose Final').item.json.hashtags, draft: $('Compose Final').item.json.draft, error: $json.error ? JSON.stringify($json.error).slice(0, 300) : '' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "7f1b12cf-c2de-4730-a4ef-2e4a50e0d0df",
+      "name": "Log Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Brand Config').item.json.slack_webhook_url }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: ':warning: FinEdge LinkedIn workflow failed at AutoGen Microservice.\\n' + JSON.stringify($json).slice(0, 500) }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "a0e53e70-6f3e-480b-9d94-4b237954ce2f",
+      "name": "Error Alert (Slack)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        480
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Brand Config').item.json.service_url }}/log",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ route: 'error', status: 'microservice_failed', topic: $('Brand Config').item.json.topic, dry_run: $('Brand Config').item.json.dry_run, error: JSON.stringify($('AutoGen Microservice').item.json).slice(0, 300) }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "3b97900a-fb59-4225-b890-20d1a0ab2217",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        480
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Brand Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brand Config": {
+      "main": [
+        [
+          {
+            "node": "AutoGen Microservice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AutoGen Microservice": {
+      "main": [
+        [
+          {
+            "node": "Compose Final",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Alert (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Final": {
+      "main": [
+        [
+          {
+            "node": "Approval Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Gate": {
+      "main": [
+        [
+          {
+            "node": "Publish to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Log Published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Review": {
+      "main": [
+        [
+          {
+            "node": "Log Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Alert (Slack)": {
+      "main": [
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata",
+    "saveManualExecutions": true
+  }
+}
