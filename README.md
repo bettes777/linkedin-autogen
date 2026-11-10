@@ -157,7 +157,7 @@ Review results with `curl http://localhost:8000/log` (tab 2) or open `logs/run_l
 
 ## 6. Test results on the lab VM
 
-Environment: Ubuntu VM, Python 3.12, Node.js v20.20.2, n8n 2.8.4 (via `npx`), Azure OpenAI `gpt-5-mini` through the course gateway.
+Environment: Ubuntu VM, Python 3.12, Node.js v20.20.2, n8n 2.8.4 (via `npx`), Azure OpenAI `gpt-5-mini` through the Azure OpenAI gateway.
 
 | Test | Result |
 |---|---|
