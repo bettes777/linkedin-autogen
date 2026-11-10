@@ -1,6 +1,6 @@
 # FinEdge LinkedIn Content Automation — n8n + AutoGen Microservice
 
-An n8n workflow that, on a schedule, asks a multi-agent AutoGen microservice for LinkedIn post ideas, a draft, a confidence score and hashtags, then routes the post through an approval gate: to **Slack for human review** (dry-run or low confidence) or **directly to LinkedIn** (live mode and confidence at or above threshold). Every run is logged to a CSV file for monitoring and threshold tuning.
+An automated workflow built on n8n that, on a schedule, asks a multi-agent AutoGen microservice for LinkedIn post ideas, a draft, a confidence score and hashtags, then routes the post through an approval gate: to **Slack for human review** (dry-run or low confidence) or **directly to LinkedIn** (live mode and confidence at or above threshold). Every run is logged to a CSV file for monitoring and threshold tuning.
 
 Built as a course-end project for the **Post Graduate Program in Applied Agentic AI** (Virginia Tech and Simplilearn). FinEdge is the fictional fintech company from the project brief.
 
