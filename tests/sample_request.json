@@ -1,0 +1,16 @@
+{
+  "brand": {
+    "name": "FinEdge",
+    "voice": "Authoritative, clear, optimistic, never hype-driven",
+    "audience": "Indian retail investors, SME founders, fintech professionals",
+    "pillars": ["Financial literacy", "Digital payments", "Responsible investing"],
+    "banned_terms": ["guaranteed returns", "risk-free", "double your money"],
+    "call_to_action": "Follow FinEdge for practical money insights."
+  },
+  "context": {
+    "topic": "How UPI is changing small-business cash flow",
+    "notes": "Keep it practical; no statistics unless sourced."
+  },
+  "num_ideas": 3,
+  "max_hashtags": 5
+}
