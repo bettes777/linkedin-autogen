@@ -1,13 +1,13 @@
 # Reflection: Design Decisions, Challenges and Trade-offs
 
 ## Problem framing
-FinEdge's content team reports spending 15+ hours a week drafting posts, with inconsistent posting and no unified executive voice (figures from the project brief). I treated this as a product problem with two goals that pull against each other. The first is **speed and consistency**: automate drafting on a fixed cadence. The second is **brand and regulatory safety**: a fintech cannot publish unreviewed financial claims. The design keeps a human in the loop by default and lets automation earn autonomy through measured confidence.
+FinEdge's content team reports spending 15+ hours a week drafting posts, with inconsistent posting and no unified executive voice (figures from the fictional scenario). I treated this as a product problem with two goals that pull against each other. The first is **speed and consistency**: automate drafting on a fixed cadence. The second is **brand and regulatory safety**: a fintech cannot publish unreviewed financial claims. The design keeps a human in the loop by default and lets automation earn autonomy through measured confidence.
 
 ## Key design decisions
 
 **1. Separate the "thinking" from the "plumbing."** The AutoGen microservice owns content generation; n8n owns scheduling, routing, integrations and logging. Each part could be tested on its own: curl for the service, the Execute workflow button for n8n. Either can be replaced without rebuilding the other, for example swapping the model or moving from Slack to Teams. This separation also made debugging much easier on the VM: when n8n failed, I could confirm with curl that the service itself was healthy, which pointed the problem to the connection between the two.
 
-**2. Specialised agents instead of one large prompt.** Following the CodeGen → Tester → Debugger pattern from the course demo, I split the work into Ideator, Writer, Reviewer and Hashtagger. Each agent has a narrow job and a strict JSON reply format, which makes outputs easier to parse, debug and improve individually. Having the Reviewer act as a separate "critic" is what makes a confidence score possible.
+**2. Specialised agents instead of one large prompt.** Following a CodeGen → Tester → Debugger style of orchestration, I split the work into Ideator, Writer, Reviewer and Hashtagger. Each agent has a narrow job and a strict JSON reply format, which makes outputs easier to parse, debug and improve individually. Having the Reviewer act as a separate "critic" is what makes a confidence score possible.
 
 **3. Confidence = LLM judgment + deterministic guardrails.** An LLM grading its own team's work can be too generous, so the Reviewer's score is reduced by rule-based penalties for banned terms, risky financial phrases ("guaranteed returns", "risk-free"), length and missing hashtags. Rules are transparent and auditable, which matters in a regulated industry. The response returns the breakdown so reviewers can see why a score is low.
 
@@ -16,7 +16,7 @@ FinEdge's content team reports spending 15+ hours a week drafting posts, with in
 **5. Logging for tuning, not just debugging.** Every run writes a CSV row with route, status, confidence, threshold, topic, hashtags and a draft preview. Over time this shows how often human reviewers agree with high-confidence drafts. That is the evidence needed to raise or lower the threshold, or to decide when dry-run can be switched off.
 
 ## Results
-I ran the system on the course Ubuntu VM with Azure OpenAI `gpt-5-mini`, Node.js 20 and n8n 2.8.4.
+I ran the system on an Ubuntu VM with Azure OpenAI `gpt-5-mini`, Node.js 20 and n8n 2.8.4.
 
 - **Microservice:** all curl tests passed in mock mode, then with the real model. Each call returned ideas, a draft, a confidence score and hashtags.
 - **Full workflow, three dry-run executions:**

@@ -7,8 +7,8 @@ Endpoints
   POST /log        -> append one run record to logs/run_log.csv (called by n8n)
   GET  /log        -> return the most recent log rows (for review / screenshots)
 
-Agent chain (same pattern as Lesson 02 Demo 01: one AssistantAgent per role,
-called in sequence by a Python orchestrator):
+Agent chain (one AssistantAgent per role, called in sequence by a Python
+orchestrator):
   1. Ideator      -> N post ideas grounded in brand pillars and today's context
   2. Writer       -> full LinkedIn draft for the strongest idea
   3. Reviewer     -> scores the draft against a rubric (0.0 - 1.0)

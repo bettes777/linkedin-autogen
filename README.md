@@ -2,9 +2,9 @@
 
 An automated workflow built on n8n that, on a schedule, asks a multi-agent AutoGen microservice for LinkedIn post ideas, a draft, a confidence score and hashtags, then routes the post through an approval gate: to **Slack for human review** (dry-run or low confidence) or **directly to LinkedIn** (live mode and confidence at or above threshold). Every run is logged to a CSV file for monitoring and threshold tuning.
 
-Built as a course-end project for a post graduate program in agentic AI. FinEdge is the fictional fintech company from the project brief.
+FinEdge is a fictional fintech company, used as the scenario for this project.
 
-**Status:** built and tested end to end on the course Ubuntu VM. See section 6 for the test results and the [`screenshots/`](screenshots/) folder for evidence.
+**Status:** built and tested end to end on an Ubuntu VM. See section 6 for the test results and the [`screenshots/`](screenshots/) folder for evidence.
 
 ## 1. Architecture
 
@@ -19,7 +19,7 @@ flowchart LR
     G -- false --> J[Slack Review<br/>webhook] --> K[Log Review<br/>POST /log]
 ```
 
-**Inside the microservice** (`main.py`, FastAPI), four AutoGen `AssistantAgent`s run in sequence. This is the same orchestrator pattern as Lesson 02 Demo 01 (CodeGen → Tester → Debugger), applied to content:
+**Inside the microservice** (`main.py`, FastAPI), four AutoGen `AssistantAgent`s run in sequence. A Python orchestrator calls one agent per role, each for a single turn; the agents do not converse with each other:
 
 | Step | Agent | Output |
 |---|---|---|
@@ -78,11 +78,11 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 
 When mock mode works, edit `.env`: set `AZURE_OPENAI_API_KEY` to your Azure OpenAI key, set `MOCK_MODE=false`, then restart uvicorn (Ctrl+C, then run the same command again).
 
-> **Key safety:** put the key only in `.env`, never in `main.py`, the workflow JSON, screenshots or the submission. Submit `.env.example`, not `.env`.
+> **Key safety:** put the key only in `.env`, never in `main.py`, the workflow JSON or screenshots. Commit `.env.example`, not `.env`.
 
 ### 3.2 n8n (tab 3)
 
-According to the n8n installation docs, n8n needs **Node.js 20.19 to 24.x**. The lab VM had Node.js v20.20.2 and no n8n, so n8n was run without a global install:
+According to the n8n installation docs, n8n needs **Node.js 20.19 to 24.x**. The test VM had Node.js v20.20.2 and no n8n, so n8n was run without a global install:
 
 ```bash
 node -v        # must be v20.19 or newer (up to v24.x)
@@ -113,7 +113,7 @@ sed -i 's/localhost:8000/127.0.0.1:8000/g' n8n/finedge_linkedin_workflow.json
 2. At **api.slack.com/apps** → **Create New App** → **Blank app** → name it (here: `FinEdge Reviewer`) and pick the workspace.
 3. **Incoming Webhooks** → switch **On** → **Add New Webhook** → choose the channel → **Allow** → copy the `https://hooks.slack.com/services/...` URL into Brand Config.
 
-The workflow sends `{"text": "..."}`, which is the standard incoming-webhook payload. Treat the webhook URL like a password. (OAuth with n8n's Slack node is the optional alternative mentioned in the brief.)
+The workflow sends `{"text": "..."}`, which is the standard incoming-webhook payload. Treat the webhook URL like a password. (OAuth with n8n's Slack node is an alternative.)
 
 ## 4. Node-by-node configuration
 
@@ -155,7 +155,7 @@ Expect: `/health` returns `"mode"`; `/linkedin` returns `ideas`, `draft`, `confi
 
 Review results with `curl http://localhost:8000/log` (tab 2) or open `logs/run_log.csv`.
 
-## 6. Test results on the lab VM
+## 6. Test results
 
 Environment: Ubuntu VM, Python 3.12, Node.js v20.20.2, n8n 2.8.4 (via `npx`), Azure OpenAI `gpt-5-mini` through the Azure OpenAI gateway.
 
@@ -184,13 +184,13 @@ All three n8n runs used the topic "What SMEs should know about digital lending" 
 | [`07-microservice-llm-output.png`](screenshots/07-microservice-llm-output.png) | `/linkedin` response from the real model, including the Reviewer's reasons and suggested fix |
 | [`08-microservice-mock-output.png`](screenshots/08-microservice-mock-output.png) | `/linkedin` response in mock mode |
 | [`09-curl-log-tests.png`](screenshots/09-curl-log-tests.png) | `/log` read-back showing Run 1's `slack_failed` row (Slack `404 no_team`) |
-| [`10-n8n-running-on-vm.png`](screenshots/10-n8n-running-on-vm.png) | n8n 2.8.4 started with `npx` on the lab VM, workflow imported |
+| [`10-n8n-running-on-vm.png`](screenshots/10-n8n-running-on-vm.png) | n8n 2.8.4 started with `npx` on the test VM, workflow imported |
 
 The VM username and some Slack workspace details were blanked out in the screenshots.
 
 ## 7. Errors found and how they were resolved
 
-**During the lab VM test**
+**During the VM test**
 
 | Issue | Cause | Resolution |
 |---|---|---|
@@ -219,5 +219,9 @@ The VM username and some Slack workspace details were blanked out in the screens
 - **Error logging depends on the service.** If the microservice is down, Log Error cannot write to the CSV. A production version should log to a separate store (a database or Google Sheet).
 - **Topic rotates by week**, so runs in the same week use the same topic.
 - **Live LinkedIn posting and the low-confidence scenario were not tested.** The workflow was run in dry-run mode only.
+- **The approval gate does not check `mode`.** Mock mode returns a fixed reviewer score of 0.86, and the service falls back to mock mode when no API key is set. With `dry_run = false` and the default 0.75 threshold, a mock post would therefore be published. Before any live use, add a `mode = llm` condition to the Approval Gate, or make the service return an error when the key is missing.
+- **Review is one-way.** Slack receives the draft, but there is no approve or reject action in the workflow. A reviewer who approves a draft has to publish it by hand.
+- **The Reviewer's `suggested_fix` is reported, not applied.** There is no revision loop.
+- **The 0.75 threshold and the guardrail penalty weights are starting values, not calibrated.** All three test runs scored above the threshold (0.84–0.92), so the gate has not yet held a draft back on confidence.
 - **No authentication on the microservice.** It must stay on a private network; add an API key before any shared deployment.
 - The 3,000-character LinkedIn post limit used by the length guardrail should be checked against LinkedIn's current documentation.
